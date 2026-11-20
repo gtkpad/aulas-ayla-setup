@@ -4,7 +4,7 @@
 # tipo de processador, sem imitar outro), criada pelo OrbStack.
 #
 # Este script roda no Mac (no Terminal do macOS), não dentro do Linux.
-# Leia tudo com `less semana-01.sh` antes de rodar com `bash semana-01.sh`.
+# Para instalar: curl -fsSL https://raw.githubusercontent.com/gtkpad/aulas-ayla-setup/main/semana-01.sh | bash
 # Pode rodar quantas vezes quiser: o que já está pronto é deixado como está.
 # Ele nunca mexe na sua pasta ~/aulas/: quem cria e cuida dela é você, no Dia 1.
 # No seu home, ele só escreve na pasta ~/material/ e numa linha do ~/.bashrc.

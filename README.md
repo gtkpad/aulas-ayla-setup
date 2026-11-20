@@ -6,12 +6,12 @@ Cada `semana-NN.sh` cria (ou liga) a máquina `aulas-ayla-vm` no OrbStack (Ubunt
 
 ## Como usar
 
-Leia antes de rodar. Rodar um script baixado da internet sem ler é dar a ele a chave da casa.
+No Terminal do Mac:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/gtkpad/aulas-ayla-setup/main/semana-01.sh -o setup.sh
-less setup.sh
-bash setup.sh
+curl -fsSL https://raw.githubusercontent.com/gtkpad/aulas-ayla-setup/main/semana-01.sh | bash
 ```
+
+O script é público: para ver o que ele faz, abra o `semana-01.sh` neste repositório.
 
 Precisa do OrbStack e do `git` instalados no Mac, e de acesso de leitura ao repositório do material.
