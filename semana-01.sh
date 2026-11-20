@@ -29,7 +29,7 @@ CACHE="$HOME/.cache/aulas-ayla/repo"
 VSCODE_SETTINGS=${VSCODE_SETTINGS:-"$HOME/Library/Application Support/Code/User/settings.json"}
 
 # Pacotes do bloco 1. É a mesma lista da seção "base" do template/captura/vm-pacotes.sh
-# do workspace do Gabriel (é ela que monta o ambiente onde as saídas do PDF foram
+# do meu workspace (é ela que monta o ambiente onde as saídas do PDF foram
 # capturadas). A lista vem copiada aqui para o script funcionar sozinho, baixado pelo curl;
 # quem gera este arquivo a partir do workspace mantém as duas listas iguais.
 PACOTES="build-essential gdb curl ca-certificates traceroute bind9-dnsutils \
@@ -56,24 +56,26 @@ passo "2/7 Máquina Linux $MAQUINA"
 # (a do processador do Mac, a mesma do PDF), com o usuário ayla.
 # Se já existe uma máquina com esse nome, mas de outra arquitetura, o script para: trocar
 # exige apagar a máquina, e isso apaga tudo o que está dentro dela. Ele nunca apaga sozinho.
-orb start >/dev/null 2>&1 || true
-if ! info=$(orb info "$MAQUINA" 2>/dev/null); then
+orb start </dev/null >/dev/null 2>&1 || true
+if ! info=$(orb info "$MAQUINA" </dev/null 2>/dev/null); then
   echo "A máquina não existe. Criando (leva alguns minutos na primeira vez)..."
-  orb create -a arm64 -u "$USUARIO" ubuntu:noble "$MAQUINA"
+  orb create -a arm64 -u "$USUARIO" ubuntu:noble "$MAQUINA" </dev/null
 elif ! printf '%s\n' "$info" | grep -q '^Architecture: arm64$'; then
   arq=$(printf '%s\n' "$info" | sed -n 's/^Architecture: //p')
   pare "já existe uma máquina $MAQUINA, mas ela é ${arq:-de arquitetura desconhecida}, não arm64.
 O curso usa a máquina arm64. Para trocar, a máquina antiga precisa ser apagada, e isso
 apaga tudo o que está dentro dela, inclusive a sua pasta ~/aulas/. Não apaguei nada.
-Chame o Gabriel: ele guarda o que precisar (pelo Mac, em ~/OrbStack/$MAQUINA/home/$USUARIO/),
-apaga a máquina com 'orb delete $MAQUINA' e roda este script de novo."
+Me chame: eu guardo o que precisar (pelo Mac, em ~/OrbStack/$MAQUINA/home/$USUARIO/),
+apago a máquina com 'orb delete $MAQUINA' e rodo este script de novo."
 elif ! printf '%s\n' "$info" | grep -q '^State: running'; then
   echo "A máquina existe, mas está desligada. Ligando..."
-  orb start "$MAQUINA"
+  orb start "$MAQUINA" </dev/null
 else
   echo "A máquina já existe e está ligada."
 fi
 
+# Rodado com `curl ... | bash`, a entrada padrão deste script é o próprio cano: todo comando
+# que poderia ler dela recebe </dev/null ou o seu próprio heredoc, para não engolir o resto.
 # Atalhos: `como_root` e `como_ayla` rodam, dentro do Linux, o script que vier pela
 # entrada padrão (o texto entre <<'EOF' e EOF logo abaixo de cada uso).
 como_root() { orb -m "$MAQUINA" -u root bash -s -- "$@"; }
@@ -204,20 +206,19 @@ passo "6/7 Material da $SEMANA"
 export GIT_TERMINAL_PROMPT=0
 erro_git() {
   pare "não consegui baixar o material ($REPO_URL).
-Isso quase sempre é falta de acesso: o repositório é privado. Confira se a sua conta do
-GitHub tem acesso a ele e se o git deste Mac está com o seu token guardado (o Gabriel
-mostra como). Depois rode este script de novo."
+Isso quase sempre é falta de acesso: o repositório do material é privado, e o acesso
+deste Mac a ele quem configura sou eu. Me chame, e depois rode este script de novo."
 }
 if [ -d "$CACHE/.git" ]; then
-  git -C "$CACHE" fetch -q origin main || erro_git
-  git -C "$CACHE" reset -q --hard origin/main
+  git -C "$CACHE" fetch -q origin main </dev/null || erro_git
+  git -C "$CACHE" reset -q --hard origin/main </dev/null
   echo "Material atualizado em $CACHE"
 else
   mkdir -p "$(dirname "$CACHE")"
-  git clone -q --branch main --single-branch "$REPO_URL" "$CACHE" || erro_git
+  git clone -q --branch main --single-branch "$REPO_URL" "$CACHE" </dev/null || erro_git
   echo "Material baixado em $CACHE"
 fi
-[ -d "$CACHE/$SEMANA" ] || pare "o repositório ainda não tem a pasta $SEMANA/. Avise o Gabriel."
+[ -d "$CACHE/$SEMANA" ] || pare "o repositório ainda não tem a pasta $SEMANA/. Me avise."
 
 # A cópia para o Linux é feita lá dentro: o Linux enxerga o disco do Mac em /mnt/mac.
 # ~/material/ é só para ler. Para não perder nada que você tenha mudado lá por engano:
@@ -317,5 +318,5 @@ if [ "$falhas" -eq 0 ]; then
   echo "Tudo pronto. Para entrar no Linux: orb -m $MAQUINA"
   exit 0
 fi
-echo "$falhas item(ns) com FAILED. Copie as linhas acima e mande para o Gabriel."
+echo "$falhas item(ns) com FAILED. Copie as linhas acima e me mande."
 exit 1
