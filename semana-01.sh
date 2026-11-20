@@ -1,5 +1,7 @@
 #!/bin/bash
-# Aulas Ayla, semana 1: prepara a máquina Linux x86-64 onde você programa em C.
+# Aulas Ayla, semana 1: prepara a máquina Linux onde você programa em C.
+# É uma máquina Linux arm64 de verdade, rodando direto no processador do Mac (o mesmo
+# tipo de processador, sem imitar outro), criada pelo OrbStack.
 #
 # Este script roda no Mac (no Terminal do macOS), não dentro do Linux.
 # Leia tudo com `less semana-01.sh` antes de rodar com `bash semana-01.sh`.
@@ -50,12 +52,21 @@ echo "OrbStack e git encontrados."
 # ---------------------------------------------------------------------------------------
 passo "2/7 Máquina Linux $MAQUINA"
 # `orb start` liga o OrbStack, se ele estiver fechado. `orb info` responde com erro quando
-# a máquina não existe; nesse caso ela é criada: Ubuntu 24.04 (noble), arquitetura amd64
-# (x86-64, a mesma do PDF), com o usuário ayla.
+# a máquina não existe; nesse caso ela é criada: Ubuntu 24.04 (noble), arquitetura arm64
+# (a do processador do Mac, a mesma do PDF), com o usuário ayla.
+# Se já existe uma máquina com esse nome, mas de outra arquitetura, o script para: trocar
+# exige apagar a máquina, e isso apaga tudo o que está dentro dela. Ele nunca apaga sozinho.
 orb start >/dev/null 2>&1 || true
 if ! info=$(orb info "$MAQUINA" 2>/dev/null); then
   echo "A máquina não existe. Criando (leva alguns minutos na primeira vez)..."
-  orb create -a amd64 -u "$USUARIO" ubuntu:noble "$MAQUINA"
+  orb create -a arm64 -u "$USUARIO" ubuntu:noble "$MAQUINA"
+elif ! printf '%s\n' "$info" | grep -q '^Architecture: arm64$'; then
+  arq=$(printf '%s\n' "$info" | sed -n 's/^Architecture: //p')
+  pare "já existe uma máquina $MAQUINA, mas ela é ${arq:-de arquitetura desconhecida}, não arm64.
+O curso usa a máquina arm64. Para trocar, a máquina antiga precisa ser apagada, e isso
+apaga tudo o que está dentro dela, inclusive a sua pasta ~/aulas/. Não apaguei nada.
+Chame o Gabriel: ele guarda o que precisar (pelo Mac, em ~/OrbStack/$MAQUINA/home/$USUARIO/),
+apaga a máquina com 'orb delete $MAQUINA' e roda este script de novo."
 elif ! printf '%s\n' "$info" | grep -q '^State: running'; then
   echo "A máquina existe, mas está desligada. Ligando..."
   orb start "$MAQUINA"
@@ -265,7 +276,7 @@ item() {  # item <nome> <comando...>: OK se o comando der certo
   nome=$1; shift
   if "$@" >/dev/null 2>&1; then echo "OK $nome"; else echo "FAILED $nome"; falhas=$((falhas + 1)); fi
 }
-item "uname -m = x86_64" test "$(uname -m)" = x86_64
+item "uname -m = aarch64" test "$(uname -m)" = aarch64
 item "Ubuntu 24.04" grep -q '^VERSION_ID="24.04"' /etc/os-release
 item "~/.bashrc com LC_ALL=C.UTF-8" test "$(bash -ic 'echo "$LC_ALL"' 2>/dev/null | tail -1)" = C.UTF-8
 item "locale C.UTF-8" sh -c 'locale 2>&1 | grep -qx "LC_ALL=C.UTF-8" && ! locale 2>&1 >/dev/null | grep -q .'
