@@ -228,7 +228,10 @@ fi
 #     (por exemplo README.md.local), e o arquivo volta a ser o do repositório.
 # Para saber se foi você que mudou, o script guarda a "impressão digital" (sha256) de cada
 # arquivo que entregou, em ~/material/semana-01/.entregue.sha256.
-# Arquivos que saíram do repositório não são apagados.
+#   - arquivo que o script entregou antes e que saiu do repositório: é apagado, se você
+#     não mexeu nele; se mexeu, ele fica, renomeado com o final .local;
+#   - pastas que ficarem vazias por isso saem também.
+# Nada que o script não entregou é apagado, e nada fora de ~/material/semana-01/ é tocado.
 como_ayla "/mnt/mac$CACHE/$SEMANA" "$SEMANA" <<'EOF'
 set -euo pipefail
 src=$1
@@ -237,7 +240,7 @@ reg=$dst/.entregue.sha256
 mkdir -p "$dst"
 touch "$reg"
 novo_reg=$(mktemp)
-novos=0; atualizados=0; guardados=0
+novos=0; atualizados=0; guardados=0; removidos=0
 sha() { sha256sum < "$1" | cut -d' ' -f1; }
 cd "$src"
 while IFS= read -r f; do
@@ -260,8 +263,26 @@ while IFS= read -r f; do
   fi
   cp "$f" "$dst/$f"; atualizados=$((atualizados + 1))
 done < <(find . -type f | sort)
+
+# Arquivos do registro antigo que não estão no novo saíram do repositório.
+while IFS=$'\t' read -r entregue f; do
+  [ -f "$dst/$f" ] || continue
+  if [ "$(sha "$dst/$f")" = "$entregue" ]; then
+    rm "$dst/$f"; removidos=$((removidos + 1))
+  else
+    copia="$dst/$f.local"
+    [ -e "$copia" ] && copia="$dst/$f.local.$(date +%Y%m%d-%H%M%S)"
+    mv "$dst/$f" "$copia"
+    echo "$f saiu do material, mas você tinha mudado; a sua versão ficou em ${copia#"$dst"/}"
+    guardados=$((guardados + 1))
+  fi
+  # Sobe pelas pastas do arquivo apagando as que ficaram vazias (rmdir só apaga pasta vazia).
+  d=$(dirname "$f")
+  while [ "$d" != . ] && rmdir "$dst/$d" 2>/dev/null; do d=$(dirname "$d"); done
+done < <(awk -F'\t' 'NR == FNR { novo[$2] = 1; next } !($2 in novo)' "$novo_reg" "$reg")
+
 mv "$novo_reg" "$reg"
-echo "Em ~/material/$2: $novos novo(s), $atualizados atualizado(s), $guardados versão(ões) sua(s) guardada(s) com .local."
+echo "Em ~/material/$2: $novos novo(s), $atualizados atualizado(s), $removidos apagado(s) porque saíram do repositório, $guardados versão(ões) sua(s) guardada(s) com .local."
 EOF
 
 # ---------------------------------------------------------------------------------------
